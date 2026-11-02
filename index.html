@@ -303,16 +303,12 @@
         </div>
     </div>
 
-    <!-- SCRIPT PRINCIPAL -->
+    <!-- SCRIPTS DE FIREBASE Y APLICACIÓN -->
     <script type="module">
-        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
         const firebaseConfig = {
             apiKey: "AIzaSyBimZwin5waOrIuXMO-4-yRmKDNn3sdtQE",
             authDomain: "elite-27906.firebaseapp.com",
@@ -323,26 +319,97 @@
             measurementId: "G-W6VQKXNS4B"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
-    </script>
+        const db = getFirestore(app);
 
-    <script>
-        // BASE DE DATOS LOCALSTORAGE
-        let productos = JSON.parse(localStorage.getItem('app_productos')) || [];
-        let ventas = JSON.parse(localStorage.getItem('app_ventas')) || [];
-        let gastos = JSON.parse(localStorage.getItem('app_gastos')) || [];
+        // Variables globales de datos en la nube
+        window.productos = [];
+        window.ventas = [];
+        window.gastos = [];
+        window.chartInstance = null;
 
-        let chartInstance = null;
+        // Cargar datos desde Firestore al iniciar
+        window.loadCloudData = async function() {
+            try {
+                // Productos
+                const prodSnapshot = await getDocs(collection(db, "productos"));
+                window.productos = [];
+                prodSnapshot.forEach((docSnap) => {
+                    window.productos.push({ idDoc: docSnap.id, ...docSnap.data() });
+                });
 
-        // INICIALIZACIÓN Y ATAJOS DE TECLADO (ESC / ENTER)
+                // Ventas
+                const ventasSnapshot = await getDocs(collection(db, "ventas"));
+                window.ventas = [];
+                ventasSnapshot.forEach((docSnap) => {
+                    window.ventas.push({ idDoc: docSnap.id, ...docSnap.data() });
+                });
+
+                // Gastos
+                const gastosSnapshot = await getDocs(collection(db, "gastos"));
+                window.gastos = [];
+                gastosSnapshot.forEach((docSnap) => {
+                    window.gastos.push({ idDoc: docSnap.id, ...docSnap.data() });
+                });
+
+                renderAll();
+            } catch (error) {
+                console.error("Error al cargar datos de Firebase:", error);
+            }
+        };
+
+        // Guardar / Actualizar Producto
+        window.guardarProductoCloud = async function(pData, docId) {
+            if (docId) {
+                await updateDoc(doc(db, "productos", docId), pData);
+            } else {
+                await addDoc(collection(db, "productos"), pData);
+            }
+            await loadCloudData();
+        };
+
+        // Eliminar Producto
+        window.eliminarProductoCloud = async function(docId) {
+            await deleteDoc(doc(db, "productos", docId));
+            await loadCloudData();
+        };
+
+        // Actualizar Stock de Producto (al vender)
+        window.actualizarStockCloud = async function(docId, nuevoStock) {
+            await updateDoc(doc(db, "productos", docId), { stock: nuevoStock });
+        };
+
+        // Guardar Venta
+        window.guardarVentaCloud = async function(vData) {
+            await addDoc(collection(db, "ventas"), vData);
+            await loadCloudData();
+        };
+
+        // Eliminar Venta
+        window.eliminarVentaCloud = async function(docId) {
+            await deleteDoc(doc(db, "ventas", docId));
+            await loadCloudData();
+        };
+
+        // Guardar Gasto
+        window.guardarGastoCloud = async function(gData) {
+            await addDoc(collection(db, "gastos"), gData);
+            await loadCloudData();
+        };
+
+        // Eliminar Gasto
+        window.eliminarGastoCloud = async function(docId) {
+            await deleteDoc(doc(db, "gastos", docId));
+            await loadCloudData();
+        };
+
+        // Inicialización y eventos de teclado
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('venta-fecha').valueAsDate = new Date();
             document.getElementById('gasto-fecha').valueAsDate = new Date();
-            renderAll();
+            loadCloudData();
 
-            // Event listener global para las teclas ESC y ENTER
             document.addEventListener('keydown', (e) => {
                 const modProducto = document.getElementById('modal-producto');
                 const modVenta = document.getElementById('modal-venta');
@@ -359,7 +426,6 @@
                 }
 
                 if (e.key === 'Enter') {
-                    // Si hay un modal abierto, confirmar/enviar el formulario activo
                     if (isProdOpen && document.activeElement.tagName !== 'BUTTON') {
                         e.preventDefault();
                         document.getElementById('form-producto').requestSubmit();
@@ -373,14 +439,9 @@
                 }
             });
         });
+    </script>
 
-        function saveState() {
-            localStorage.setItem('app_productos', JSON.stringify(productos));
-            localStorage.setItem('app_ventas', JSON.stringify(ventas));
-            localStorage.setItem('app_gastos', JSON.stringify(gastos));
-            renderAll();
-        }
-
+    <script>
         // TAB SWITCHER
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -410,15 +471,15 @@
         }
 
         // --- PRODUCTOS Y ACUMULADO DE STOCK ---
-        function openModalProducto(id = null) {
+        function openModalProducto(idDoc = null) {
             const modal = document.getElementById('modal-producto');
             const form = document.getElementById('form-producto');
             form.reset();
             
-            if (id) {
-                const p = productos.find(prod => prod.id === id);
+            if (idDoc) {
+                const p = window.productos.find(prod => prod.idDoc === idDoc);
                 document.getElementById('modal-prod-title').innerText = "Editar Producto";
-                document.getElementById('prod-id').value = p.id;
+                document.getElementById('prod-id').value = p.idDoc;
                 document.getElementById('prod-nombre').value = p.nombre;
                 document.getElementById('prod-stock').value = p.stock;
                 document.getElementById('prod-costo').value = p.costo;
@@ -432,39 +493,41 @@
             document.getElementById('prod-nombre').focus();
         }
 
-        function saveProducto(e) {
+        async function saveProducto(e) {
             e.preventDefault();
-            const id = document.getElementById('prod-id').value;
+            const idDoc = document.getElementById('prod-id').value;
             const nombre = document.getElementById('prod-nombre').value;
             const stock = parseInt(document.getElementById('prod-stock').value);
             const costo = parseFloat(document.getElementById('prod-costo').value);
             const precio = parseFloat(document.getElementById('prod-precio').value);
             const fotoInput = document.getElementById('prod-foto');
 
-            const handleSave = (fotoUrl) => {
-                if (id) {
-                    const idx = productos.findIndex(p => p.id == id);
-                    productos[idx] = { ...productos[idx], nombre, stock, costo, precio, foto: fotoUrl || productos[idx].foto };
-                } else {
-                    productos.push({ id: Date.now(), nombre, stock, costo, precio, foto: fotoUrl || '' });
-                }
-                saveState();
+            const handleSave = async (fotoUrl) => {
+                const existingProd = idDoc ? window.productos.find(p => p.idDoc === idDoc) : null;
+                const pData = {
+                    nombre,
+                    stock,
+                    costo,
+                    precio,
+                    foto: fotoUrl || (existingProd ? existingProd.foto : '')
+                };
+
+                await window.guardarProductoCloud(pData, idDoc ? idDoc : null);
                 closeModal('modal-producto');
             };
 
             if (fotoInput.files && fotoInput.files[0]) {
                 const reader = new FileReader();
-                reader.onload = (evt) => handleSave(evt.target.result);
+                reader.onload = async (evt) => await handleSave(evt.target.result);
                 reader.readAsDataURL(fotoInput.files[0]);
             } else {
-                handleSave(null);
+                await handleSave(null);
             }
         }
 
-        function deleteProducto(id) {
+        async function deleteProducto(idDoc) {
             if (confirm('¿Eliminar este producto?')) {
-                productos = productos.filter(p => p.id !== id);
-                saveState();
+                await window.eliminarProductoCloud(idDoc);
             }
         }
 
@@ -475,7 +538,7 @@
             let totalCostoStock = 0;
             let totalVentaStock = 0;
 
-            productos.forEach(p => {
+            window.productos.forEach(p => {
                 const ganancia = p.precio - p.costo;
                 totalCostoStock += (p.stock * p.costo);
                 totalVentaStock += (p.stock * p.precio);
@@ -490,29 +553,28 @@
                         <td class="py-2 px-4 text-right text-blue-600 font-medium">${formatMoney(p.precio)}</td>
                         <td class="py-2 px-4 text-right text-emerald-600 font-bold">${formatMoney(ganancia)}</td>
                         <td class="py-2 px-4 text-center space-x-2">
-                            <button onclick="openModalProducto(${p.id})" class="text-blue-500 hover:text-blue-700" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteProducto(${p.id})" class="text-red-500 hover:text-red-700" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="openModalProducto('${p.idDoc}')" class="text-blue-500 hover:text-blue-700" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteProducto('${p.idDoc}')" class="text-red-500 hover:text-red-700" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
             });
 
-            // Actualizar KPIs de monto acumulado en todo el stock
             document.getElementById('kpi-stock-costo').innerText = formatMoney(totalCostoStock);
             document.getElementById('kpi-stock-venta').innerText = formatMoney(totalVentaStock);
         }
 
         // --- VENTAS ---
         function openModalVenta() {
-            if (productos.length === 0) {
+            if (window.productos.length === 0) {
                 alert('Primero debes agregar productos al inventario.');
                 return;
             }
             const modal = document.getElementById('modal-venta');
             const select = document.getElementById('venta-producto');
             select.innerHTML = '';
-            productos.forEach(p => {
-                select.innerHTML += `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`;
+            window.productos.forEach(p => {
+                select.innerHTML += `<option value="${p.idDoc}">${p.nombre} (Stock: ${p.stock})</option>`;
             });
             updateVentaPreview();
             modal.classList.remove('hidden');
@@ -522,13 +584,13 @@
 
         function updateVentaPreview() {
             const pId = document.getElementById('venta-producto').value;
-            const p = productos.find(prod => prod.id == pId);
+            const p = window.productos.find(prod => prod.idDoc == pId);
             if (p) {
                 document.getElementById('venta-precio').value = p.precio;
             }
         }
 
-        function saveVenta(e) {
+        async function saveVenta(e) {
             e.preventDefault();
             const fecha = document.getElementById('venta-fecha').value;
             const cliente = document.getElementById('venta-cliente').value.trim().toUpperCase();
@@ -536,20 +598,20 @@
             const cantidad = parseInt(document.getElementById('venta-cantidad').value);
             const precioVenta = parseFloat(document.getElementById('venta-precio').value);
 
-            const p = productos.find(prod => prod.id == pId);
+            const p = window.productos.find(prod => prod.idDoc == pId);
             if (p.stock < cantidad) {
                 alert('¡Stock insuficiente para realizar esta venta!');
                 return;
             }
 
-            // Descontar Stock Automáticamente
-            p.stock -= cantidad;
+            // Descontar Stock en la nube
+            const nuevoStock = p.stock - cantidad;
+            await window.actualizarStockCloud(p.idDoc, nuevoStock);
 
-            ventas.push({
-                id: Date.now(),
+            const vData = {
                 fecha,
                 cliente,
-                productoId: p.id,
+                productoId: p.idDoc,
                 productoNombre: p.nombre,
                 cantidad,
                 costoUnitario: p.costo,
@@ -557,23 +619,22 @@
                 totalVenta: cantidad * precioVenta,
                 totalCosto: cantidad * p.costo,
                 ganancia: (cantidad * precioVenta) - (cantidad * p.costo)
-            });
+            };
 
-            saveState();
+            await window.guardarVentaCloud(vData);
             closeModal('modal-venta');
         }
 
-        function deleteVenta(id) {
+        async function deleteVenta(idDoc) {
             if (confirm('¿Eliminar registro de venta?')) {
-                ventas = ventas.filter(v => v.id !== id);
-                saveState();
+                await window.eliminarVentaCloud(idDoc);
             }
         }
 
         function renderVentas() {
             const tbody = document.getElementById('tabla-ventas');
             tbody.innerHTML = '';
-            ventas.slice().reverse().forEach(v => {
+            window.ventas.slice().reverse().forEach(v => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50">
                         <td class="py-2 px-4">${v.fecha}</td>
@@ -584,7 +645,7 @@
                         <td class="py-2 px-4 text-right text-amber-600">${formatMoney(v.totalCosto)}</td>
                         <td class="py-2 px-4 text-right text-emerald-600 font-bold">${formatMoney(v.ganancia)}</td>
                         <td class="py-2 px-4 text-center">
-                            <button onclick="deleteVenta(${v.id})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="deleteVenta('${v.idDoc}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -601,35 +662,34 @@
             document.getElementById('gasto-concepto').focus();
         }
 
-        function saveGasto(e) {
+        async function saveGasto(e) {
             e.preventDefault();
             const fecha = document.getElementById('gasto-fecha').value;
             const concepto = document.getElementById('gasto-concepto').value;
             const monto = parseFloat(document.getElementById('gasto-monto').value);
 
-            gastos.push({ id: Date.now(), fecha, concepto, monto });
-            saveState();
+            const gData = { fecha, concepto, monto };
+            await window.guardarGastoCloud(gData);
             closeModal('modal-gasto');
         }
 
-        function deleteGasto(id) {
+        async function deleteGasto(idDoc) {
             if (confirm('¿Eliminar este gasto?')) {
-                gastos = gastos.filter(g => g.id !== id);
-                saveState();
+                await window.eliminarGastoCloud(idDoc);
             }
         }
 
         function renderGastos() {
             const tbody = document.getElementById('tabla-gastos');
             tbody.innerHTML = '';
-            gastos.slice().reverse().forEach(g => {
+            window.gastos.slice().reverse().forEach(g => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50">
                         <td class="py-2 px-4">${g.fecha}</td>
                         <td class="py-2 px-4 font-medium text-gray-800">${g.concepto}</td>
                         <td class="py-2 px-4 text-right text-red-600 font-bold">${formatMoney(g.monto)}</td>
                         <td class="py-2 px-4 text-center">
-                            <button onclick="deleteGasto(${g.id})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="deleteGasto('${g.idDoc}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -644,7 +704,7 @@
 
             const clienteMap = {};
 
-            ventas.forEach(v => {
+            window.ventas.forEach(v => {
                 if (!clienteMap[v.cliente]) {
                     clienteMap[v.cliente] = { cliente: v.cliente, compras: 0, totalVenta: 0, totalCosto: 0, ganancia: 0 };
                 }
@@ -697,9 +757,9 @@
         }
 
         function renderDashboard() {
-            const vTot = ventas.reduce((s, v) => s + v.totalVenta, 0);
-            const cTot = ventas.reduce((s, v) => s + v.totalCosto, 0);
-            const gTot = gastos.reduce((s, g) => s + g.monto, 0);
+            const vTot = window.ventas.reduce((s, v) => s + v.totalVenta, 0);
+            const cTot = window.ventas.reduce((s, v) => s + v.totalCosto, 0);
+            const gTot = window.gastos.reduce((s, g) => s + g.monto, 0);
             const ganLimpia = vTot - cTot - gTot;
 
             document.getElementById('kpi-ventas').innerText = formatMoney(vTot);
@@ -707,10 +767,9 @@
             document.getElementById('kpi-gastos').innerText = formatMoney(gTot);
             document.getElementById('kpi-ganancia').innerText = formatMoney(ganLimpia);
 
-            // AGRUPAMIENTO POR SEMANAS (VENTAS Y GASTOS DESCONTADOS)
             const semanasMap = {};
 
-            ventas.forEach(v => {
+            window.ventas.forEach(v => {
                 const key = getWeekKey(v.fecha);
                 if (!semanasMap[key]) {
                     semanasMap[key] = { ventasBrutas: 0, gananciaBruta: 0, gastos: 0, gananciaNeta: 0 };
@@ -719,7 +778,7 @@
                 semanasMap[key].gananciaBruta += v.ganancia;
             });
 
-            gastos.forEach(g => {
+            window.gastos.forEach(g => {
                 const key = getWeekKey(g.fecha);
                 if (!semanasMap[key]) {
                     semanasMap[key] = { ventasBrutas: 0, gananciaBruta: 0, gastos: 0, gananciaNeta: 0 };
@@ -727,7 +786,6 @@
                 semanasMap[key].gastos += g.monto;
             });
 
-            // Calcular ganancia neta final por semana restando los gastos de esa semana
             Object.keys(semanasMap).forEach(key => {
                 semanasMap[key].gananciaNeta = semanasMap[key].gananciaBruta - semanasMap[key].gastos;
             });
@@ -735,7 +793,6 @@
             const tbodySem = document.getElementById('tabla-semanas');
             tbodySem.innerHTML = '';
             
-            // Ordenar semanas cronológicamente inversa o alfabética
             const labels = Object.keys(semanasMap).sort().reverse();
             const dataGananciasNetas = [];
 
@@ -751,13 +808,12 @@
                 `;
             });
 
-            // CHARTS.JS (Evolución de Ganancia Neta Semanal descontando Gastos)
             const ctx = document.getElementById('chartSemanas').getContext('2d');
-            if (chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, {
+            if (window.chartInstance) window.chartInstance.destroy();
+            window.chartInstance = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels.slice().reverse(), // Orden cronológico para el gráfico
+                    labels: labels.slice().reverse(),
                     datasets: [{
                         label: 'Ganancia Neta (Post-Gastos) ($)',
                         data: dataGananciasNetas.slice().reverse(),
@@ -773,7 +829,6 @@
             });
         }
 
-        // CERRAR MODAL
         function closeModal(id) {
             const modal = document.getElementById(id);
             modal.classList.remove('flex');
