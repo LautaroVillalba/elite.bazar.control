@@ -41,27 +41,27 @@
         <section id="tab-dashboard" class="tab-content active space-y-6">
             <!-- KPIs -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 text-center">
                     <p class="text-sm font-medium text-gray-500">Ventas Totales</p>
                     <p id="kpi-ventas" class="text-2xl font-bold text-blue-600">$ 0</p>
                 </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 text-center">
                     <p class="text-sm font-medium text-gray-500">Costo de Mercadería</p>
                     <p id="kpi-costos" class="text-2xl font-bold text-amber-600">$ 0</p>
                 </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 text-center">
                     <p class="text-sm font-medium text-gray-500">Gastos Operativos</p>
                     <p id="kpi-gastos" class="text-2xl font-bold text-red-600">$ 0</p>
                 </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 text-center">
                     <p class="text-sm font-medium text-gray-500">Ganancia Neta Limpia</p>
                     <p id="kpi-ganancia" class="text-2xl font-bold text-emerald-600">$ 0</p>
                 </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 text-center">
                     <p class="text-sm font-medium text-gray-500">Inversión Stock (Costo)</p>
                     <p id="kpi-dash-stock-costo" class="text-2xl font-bold text-amber-600">$ 0</p>
                 </div>
-                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 text-center">
                     <p class="text-sm font-medium text-gray-500">Valor Potencial Stock</p>
                     <p id="kpi-dash-stock-venta" class="text-2xl font-bold text-blue-600">$ 0</p>
                 </div>
@@ -84,9 +84,9 @@
                         <table class="w-full text-sm text-left text-gray-600">
                             <thead class="text-xs uppercase bg-gray-50 text-gray-500 sticky top-0">
                                 <tr>
-                                    <th class="py-2 px-3">Semana</th>
-                                    <th class="py-2 px-3 text-right">Gastos</th>
-                                    <th class="py-2 px-3 text-right">Ganancia Neta</th>
+                                    <th class="py-2 px-3 text-center">Semana</th>
+                                    <th class="py-2 px-3 text-center">Gastos</th>
+                                    <th class="py-2 px-3 text-center">Ganancia Neta</th>
                                 </tr>
                             </thead>
                             <tbody id="tabla-semanas" class="divide-y divide-gray-100">
@@ -140,12 +140,12 @@
                     <table class="w-full text-sm text-left text-gray-600">
                         <thead class="text-xs uppercase bg-gray-50 text-gray-500 border-b">
                             <tr>
-                                <th class="py-3 px-4">Foto</th>
-                                <th class="py-3 px-4">Producto</th>
+                                <th class="py-3 px-4 text-center">Foto</th>
+                                <th class="py-3 px-4 text-center">Producto</th>
                                 <th class="py-3 px-4 text-center">Stock</th>
-                                <th class="py-3 px-4 text-right">Costo ($)</th>
-                                <th class="py-3 px-4 text-right">Precio Venta ($)</th>
-                                <th class="py-3 px-4 text-right">Ganancia Un. ($)</th>
+                                <th class="py-3 px-4 text-center">Costo ($)</th>
+                                <th class="py-3 px-4 text-center">Precio Venta ($)</th>
+                                <th class="py-3 px-4 text-center">Ganancia Un. ($)</th>
                                 <th class="py-3 px-4 text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -168,12 +168,12 @@
                     <table class="w-full text-sm text-left text-gray-600">
                         <thead class="text-xs uppercase bg-gray-50 text-gray-500 border-b">
                             <tr>
-                                <th class="py-3 px-4">Fecha</th>
-                                <th class="py-3 px-4">Cliente</th>
-                                <th class="py-3 px-4">Productos / Cantidades</th>
-                                <th class="py-3 px-4 text-right">Total Venta</th>
-                                <th class="py-3 px-4 text-right">Costo Total</th>
-                                <th class="py-3 px-4 text-right">Ganancia Limpia</th>
+                                <th class="py-3 px-4 text-center">Fecha</th>
+                                <th class="py-3 px-4 text-center">Cliente</th>
+                                <th class="py-3 px-4 text-center">Productos / Cantidades</th>
+                                <th class="py-3 px-4 text-center">Total Venta</th>
+                                <th class="py-3 px-4 text-center">Costo Total</th>
+                                <th class="py-3 px-4 text-center">Ganancia Limpia</th>
                                 <th class="py-3 px-4 text-center">Acción</th>
                             </tr>
                         </thead>
@@ -196,9 +196,9 @@
                     <table class="w-full text-sm text-left text-gray-600">
                         <thead class="text-xs uppercase bg-gray-50 text-gray-500 border-b">
                             <tr>
-                                <th class="py-3 px-4">Fecha</th>
-                                <th class="py-3 px-4">Concepto / Descripción</th>
-                                <th class="py-3 px-4 text-right">Monto ($)</th>
+                                <th class="py-3 px-4 text-center">Fecha</th>
+                                <th class="py-3 px-4 text-center">Concepto / Descripción</th>
+                                <th class="py-3 px-4 text-center">Monto ($)</th>
                                 <th class="py-3 px-4 text-center">Acción</th>
                             </tr>
                         </thead>
@@ -468,9 +468,9 @@
             renderDashboard();
         }
 
-        // FORMATO MONEDA
+        // FORMATO MONEDA (Sin decimales)
         function formatMoney(amount) {
-            return '$ ' + Number(amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            return '$ ' + Math.round(Number(amount) || 0).toLocaleString('es-AR');
         }
 
         // --- PRODUCTOS Y ACUMULADO DE STOCK ---
@@ -546,15 +546,15 @@
                 totalCostoStock += (p.stock * p.costo);
                 totalVentaStock += (p.stock * p.precio);
 
-                const img = p.foto ? `<img src="${p.foto}" class="w-10 h-10 object-cover rounded-lg border">` : `<div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400"><i class="fa-solid fa-box"></i></div>`;
+                const img = p.foto ? `<img src="${p.foto}" class="w-10 h-10 object-cover rounded-lg border mx-auto">` : `<div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 mx-auto"><i class="fa-solid fa-box"></i></div>`;
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50">
-                        <td class="py-2 px-4">${img}</td>
-                        <td class="py-2 px-4 font-semibold text-gray-800">${p.nombre}</td>
+                        <td class="py-2 px-4 text-center">${img}</td>
+                        <td class="py-2 px-4 font-semibold text-gray-800 text-center">${p.nombre}</td>
                         <td class="py-2 px-4 text-center font-bold ${p.stock < 5 ? 'text-red-500' : 'text-gray-700'}">${p.stock}</td>
-                        <td class="py-2 px-4 text-right">${formatMoney(p.costo)}</td>
-                        <td class="py-2 px-4 text-right text-blue-600 font-medium">${formatMoney(p.precio)}</td>
-                        <td class="py-2 px-4 text-right text-emerald-600 font-bold">${formatMoney(ganancia)}</td>
+                        <td class="py-2 px-4 text-center">${formatMoney(p.costo)}</td>
+                        <td class="py-2 px-4 text-center text-blue-600 font-medium">${formatMoney(p.precio)}</td>
+                        <td class="py-2 px-4 text-center text-emerald-600 font-bold">${formatMoney(ganancia)}</td>
                         <td class="py-2 px-4 text-center space-x-2">
                             <button onclick="openModalProducto('${p.idDoc}')" class="text-blue-500 hover:text-blue-700" title="Editar"><i class="fa-solid fa-pen"></i></button>
                             <button onclick="deleteProducto('${p.idDoc}')" class="text-red-500 hover:text-red-700" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
@@ -578,7 +578,6 @@
             document.getElementById('venta-fecha').valueAsDate = new Date();
             document.getElementById('venta-productos-list').innerHTML = '';
             
-            // Agregar al menos una fila por defecto
             addVentaItemRow();
 
             modal.classList.remove('hidden');
@@ -593,7 +592,7 @@
             let options = '<option value="">Seleccionar producto...</option>';
             window.productos.forEach(p => {
                 const selected = p.idDoc === productId ? 'selected' : '';
-                options += `<option value="${p.idDoc}" ${selected}>${p.nombre} (Stock: ${p.stock}) - $${p.precio}</option>`;
+                options += `<option value="${p.idDoc}" ${selected}>${p.nombre} (Stock: ${p.stock}) - $${Math.round(p.precio)}</option>`;
             });
 
             const defaultPrecio = productId ? (window.productos.find(p => p.idDoc === productId)?.precio || '') : (window.productos[0]?.precio || '');
@@ -606,7 +605,7 @@
                     ${options}
                 </select>
                 <input type="number" class="venta-row-cant w-20 px-2 py-1.5 border rounded text-sm text-center focus:outline-none focus:ring-1 focus:ring-blue-500" value="${cantidad}" min="1" required placeholder="Cant">
-                <input type="number" step="0.01" class="venta-row-precio w-28 px-2 py-1.5 border rounded text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-500" value="${precio || defaultPrecio}" required placeholder="Precio">
+                <input type="number" step="1" class="venta-row-precio w-28 px-2 py-1.5 border rounded text-sm text-center focus:outline-none focus:ring-1 focus:ring-blue-500" value="${precio !== '' ? Math.round(precio) : (defaultPrecio !== '' ? Math.round(defaultPrecio) : '')}" required placeholder="Precio">
                 <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-500 hover:text-red-700 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
             `;
             container.appendChild(div);
@@ -617,7 +616,7 @@
             const prodId = row.querySelector('.venta-row-prod').value;
             const prod = window.productos.find(p => p.idDoc === prodId);
             if (prod) {
-                row.querySelector('.venta-row-precio').value = prod.precio;
+                row.querySelector('.venta-row-precio').value = Math.round(prod.precio);
             }
         }
 
@@ -637,7 +636,6 @@
             let totalCosto = 0;
             let gananciaTotal = 0;
 
-            // Validación previa de stock para todos los ítems
             for (let row of rows) {
                 const prodId = row.querySelector('.venta-row-prod').value;
                 const cantidad = parseInt(row.querySelector('.venta-row-cant').value);
@@ -675,7 +673,6 @@
                 gananciaTotal += (cantidad * precioVentaUnitario) - (cantidad * p.costo);
             }
 
-            // Descuento automático de stock para cada producto en la nube
             for (let item of items) {
                 const p = window.productos.find(prod => prod.idDoc === item.productoId);
                 const nuevoStock = p.stock - item.cantidad;
@@ -709,18 +706,17 @@
                 if (v.items && Array.isArray(v.items)) {
                     productosHtml = v.items.map(i => `<div class="text-xs py-0.5">• <span class="font-semibold">${i.productoNombre}</span> (x${i.cantidad})</div>`).join('');
                 } else {
-                    // Compatibilidad con registros anteriores de un solo producto
                     productosHtml = `<div class="text-xs">• <span class="font-semibold">${v.productoNombre || 'Producto'}</span> (x${v.cantidad || 1})</div>`;
                 }
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50 border-b">
-                        <td class="py-3 px-4 align-top">${v.fecha}</td>
-                        <td class="py-3 px-4 align-top font-bold text-gray-700">${v.cliente}</td>
-                        <td class="py-3 px-4 align-top">${productosHtml}</td>
-                        <td class="py-3 px-4 align-top text-right text-blue-600 font-medium">${formatMoney(v.totalVenta)}</td>
-                        <td class="py-3 px-4 align-top text-right text-amber-600">${formatMoney(v.totalCosto)}</td>
-                        <td class="py-3 px-4 align-top text-right text-emerald-600 font-bold">${formatMoney(v.ganancia)}</td>
+                        <td class="py-3 px-4 align-top text-center">${v.fecha}</td>
+                        <td class="py-3 px-4 align-top font-bold text-gray-700 text-center">${v.cliente}</td>
+                        <td class="py-3 px-4 align-top text-center">${productosHtml}</td>
+                        <td class="py-3 px-4 align-top text-center text-blue-600 font-medium">${formatMoney(v.totalVenta)}</td>
+                        <td class="py-3 px-4 align-top text-center text-amber-600">${formatMoney(v.totalCosto)}</td>
+                        <td class="py-3 px-4 align-top text-center text-emerald-600 font-bold">${formatMoney(v.ganancia)}</td>
                         <td class="py-3 px-4 align-top text-center">
                             <button onclick="deleteVenta('${v.idDoc}')" class="text-red-500 hover:text-red-700" title="Eliminar Venta"><i class="fa-solid fa-trash"></i></button>
                         </td>
@@ -762,9 +758,9 @@
             window.gastos.slice().reverse().forEach(g => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-gray-50">
-                        <td class="py-2 px-4">${g.fecha}</td>
-                        <td class="py-2 px-4 font-medium text-gray-800">${g.concepto}</td>
-                        <td class="py-2 px-4 text-right text-red-600 font-bold">${formatMoney(g.monto)}</td>
+                        <td class="py-2 px-4 text-center">${g.fecha}</td>
+                        <td class="py-2 px-4 font-medium text-gray-800 text-center">${g.concepto}</td>
+                        <td class="py-2 px-4 text-center text-red-600 font-bold">${formatMoney(g.monto)}</td>
                         <td class="py-2 px-4 text-center">
                             <button onclick="deleteGasto('${g.idDoc}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
                         </td>
@@ -800,21 +796,23 @@
 
             listaClientes.sort((a, b) => b.ganancia - a.ganancia).forEach(c => {
                 container.innerHTML += `
-                    <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition">
+                    <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition text-center">
                         <div class="flex justify-between items-center mb-3">
-                            <h4 class="font-bold text-gray-800 text-lg"><i class="fa-solid fa-user text-blue-500 mr-2"></i>${c.cliente}</h4>
+                            <h4 class="font-bold text-gray-800 text-lg mx-auto"><i class="fa-solid fa-user text-blue-500 mr-2"></i>${c.cliente}</h4>
+                        </div>
+                        <div class="mb-2">
                             <span class="bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-bold">${c.compras} Venta(s)</span>
                         </div>
                         <div class="space-y-1 text-sm">
-                            <div class="flex justify-between text-gray-600">
+                            <div class="flex justify-between text-gray-600 border-b pb-1">
                                 <span>Ventas Totales:</span>
                                 <span class="font-semibold">${formatMoney(c.totalVenta)}</span>
                             </div>
-                            <div class="flex justify-between text-gray-600">
+                            <div class="flex justify-between text-gray-600 border-b pb-1">
                                 <span>Costo Mercadería:</span>
                                 <span class="font-semibold text-amber-600">${formatMoney(c.totalCosto)}</span>
                             </div>
-                            <div class="border-t pt-2 mt-2 flex justify-between text-base">
+                            <div class="pt-1 flex justify-between text-base">
                                 <span class="font-bold text-gray-700">Ganancia Neta:</span>
                                 <span class="font-bold text-emerald-600">${formatMoney(c.ganancia)}</span>
                             </div>
@@ -839,7 +837,6 @@
             const gTot = window.gastos.reduce((s, g) => s + g.monto, 0);
             const ganLimpia = vTot - cTot - gTot;
 
-            // Cálculo total de stock para la página principal
             let totalCostoStock = 0;
             let totalVentaStock = 0;
             window.productos.forEach(p => {
@@ -888,9 +885,9 @@
                 dataGananciasNetas.push(dataSem.gananciaNeta);
                 tbodySem.innerHTML += `
                     <tr>
-                        <td class="py-2 px-3 font-semibold text-gray-700">${sem}</td>
-                        <td class="py-2 px-3 text-right text-red-500">-${formatMoney(dataSem.gastos)}</td>
-                        <td class="py-2 px-3 text-right font-bold ${dataSem.gananciaNeta >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatMoney(dataSem.gananciaNeta)}</td>
+                        <td class="py-2 px-3 font-semibold text-gray-700 text-center">${sem}</td>
+                        <td class="py-2 px-3 text-center text-red-500">-${formatMoney(dataSem.gastos)}</td>
+                        <td class="py-2 px-3 text-center font-bold ${dataSem.gananciaNeta >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatMoney(dataSem.gananciaNeta)}</td>
                     </tr>
                 `;
             });
