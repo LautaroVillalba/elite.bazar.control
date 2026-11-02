@@ -40,7 +40,7 @@
         <!-- ================= TAB 1: DASHBOARD Y SEMANAS ================= -->
         <section id="tab-dashboard" class="tab-content active space-y-6">
             <!-- KPIs -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
                     <p class="text-sm font-medium text-gray-500">Ventas Totales</p>
                     <p id="kpi-ventas" class="text-2xl font-bold text-blue-600">$ 0</p>
@@ -56,6 +56,14 @@
                 <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
                     <p class="text-sm font-medium text-gray-500">Ganancia Neta Limpia</p>
                     <p id="kpi-ganancia" class="text-2xl font-bold text-emerald-600">$ 0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <p class="text-sm font-medium text-gray-500">Inversión Stock (Costo)</p>
+                    <p id="kpi-dash-stock-costo" class="text-2xl font-bold text-amber-600">$ 0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <p class="text-sm font-medium text-gray-500">Valor Potencial Stock</p>
+                    <p id="kpi-dash-stock-venta" class="text-2xl font-bold text-blue-600">$ 0</p>
                 </div>
             </div>
 
@@ -162,8 +170,7 @@
                             <tr>
                                 <th class="py-3 px-4">Fecha</th>
                                 <th class="py-3 px-4">Cliente</th>
-                                <th class="py-3 px-4">Producto</th>
-                                <th class="py-3 px-4 text-center">Cant.</th>
+                                <th class="py-3 px-4">Productos / Cantidades</th>
                                 <th class="py-3 px-4 text-right">Total Venta</th>
                                 <th class="py-3 px-4 text-right">Costo Total</th>
                                 <th class="py-3 px-4 text-right">Ganancia Limpia</th>
@@ -243,7 +250,7 @@
 
     <!-- MODAL VENTA -->
     <div id="modal-venta" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4">
             <h3 class="text-lg font-bold text-gray-800">Registrar Nueva Venta</h3>
             <form id="form-venta" onsubmit="saveVenta(event)" class="space-y-3">
                 <div>
@@ -254,22 +261,18 @@
                     <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Nombre del Cliente</label>
                     <input type="text" id="venta-cliente" placeholder="Ej: Juan Pérez" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
                 </div>
+                
+                <!-- Sección para múltiples productos -->
                 <div>
-                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Seleccionar Producto</label>
-                    <select id="venta-producto" required onchange="updateVentaPreview()" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                        <!-- JS inyecta productos -->
-                    </select>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Cantidad</label>
-                        <input type="number" id="venta-cantidad" value="1" min="1" required onchange="updateVentaPreview()" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-semibold text-gray-600 uppercase">Productos a Vender</label>
+                        <button type="button" onclick="addVentaItemRow()" class="text-xs bg-blue-50 text-blue-600 px-2.5 py-1 rounded-lg font-bold hover:bg-blue-100 transition"><i class="fa-solid fa-plus mr-1"></i>Agregar Producto</button>
                     </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Precio Venta Unit. ($)</label>
-                        <input type="number" step="0.01" id="venta-precio" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <div id="venta-productos-list" class="space-y-2 max-h-52 overflow-y-auto pr-1">
+                        <!-- Filas inyectadas por JS -->
                     </div>
                 </div>
+
                 <div class="flex justify-end gap-2 pt-3">
                     <button type="button" onclick="closeModal('modal-venta')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
                     <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Registrar Venta</button>
@@ -564,29 +567,57 @@
             document.getElementById('kpi-stock-venta').innerText = formatMoney(totalVentaStock);
         }
 
-        // --- VENTAS ---
+        // --- VENTAS CON PRODUCTOS MÚLTIPLES ---
         function openModalVenta() {
             if (window.productos.length === 0) {
                 alert('Primero debes agregar productos al inventario.');
                 return;
             }
             const modal = document.getElementById('modal-venta');
-            const select = document.getElementById('venta-producto');
-            select.innerHTML = '';
-            window.productos.forEach(p => {
-                select.innerHTML += `<option value="${p.idDoc}">${p.nombre} (Stock: ${p.stock})</option>`;
-            });
-            updateVentaPreview();
+            document.getElementById('form-venta').reset();
+            document.getElementById('venta-fecha').valueAsDate = new Date();
+            document.getElementById('venta-productos-list').innerHTML = '';
+            
+            // Agregar al menos una fila por defecto
+            addVentaItemRow();
+
             modal.classList.remove('hidden');
             modal.classList.add('flex');
             document.getElementById('venta-cliente').focus();
         }
 
-        function updateVentaPreview() {
-            const pId = document.getElementById('venta-producto').value;
-            const p = window.productos.find(prod => prod.idDoc == pId);
-            if (p) {
-                document.getElementById('venta-precio').value = p.precio;
+        function addVentaItemRow(productId = '', cantidad = 1, precio = '') {
+            const container = document.getElementById('venta-productos-list');
+            const rowId = 'row-' + Date.now() + Math.random();
+            
+            let options = '<option value="">Seleccionar producto...</option>';
+            window.productos.forEach(p => {
+                const selected = p.idDoc === productId ? 'selected' : '';
+                options += `<option value="${p.idDoc}" ${selected}>${p.nombre} (Stock: ${p.stock}) - $${p.precio}</option>`;
+            });
+
+            const defaultPrecio = productId ? (window.productos.find(p => p.idDoc === productId)?.precio || '') : (window.productos[0]?.precio || '');
+
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2 bg-gray-50 p-2 rounded-lg border border-gray-200 venta-item-row';
+            div.id = rowId;
+            div.innerHTML = `
+                <select class="venta-row-prod w-full px-2 py-1.5 border rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" onchange="onVentaProductChange('${rowId}')" required>
+                    ${options}
+                </select>
+                <input type="number" class="venta-row-cant w-20 px-2 py-1.5 border rounded text-sm text-center focus:outline-none focus:ring-1 focus:ring-blue-500" value="${cantidad}" min="1" required placeholder="Cant">
+                <input type="number" step="0.01" class="venta-row-precio w-28 px-2 py-1.5 border rounded text-sm text-right focus:outline-none focus:ring-1 focus:ring-blue-500" value="${precio || defaultPrecio}" required placeholder="Precio">
+                <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-red-500 hover:text-red-700 px-2 py-1"><i class="fa-solid fa-trash"></i></button>
+            `;
+            container.appendChild(div);
+        }
+
+        function onVentaProductChange(rowId) {
+            const row = document.getElementById(rowId);
+            const prodId = row.querySelector('.venta-row-prod').value;
+            const prod = window.productos.find(p => p.idDoc === prodId);
+            if (prod) {
+                row.querySelector('.venta-row-precio').value = prod.precio;
             }
         }
 
@@ -594,31 +625,70 @@
             e.preventDefault();
             const fecha = document.getElementById('venta-fecha').value;
             const cliente = document.getElementById('venta-cliente').value.trim().toUpperCase();
-            const pId = document.getElementById('venta-producto').value;
-            const cantidad = parseInt(document.getElementById('venta-cantidad').value);
-            const precioVenta = parseFloat(document.getElementById('venta-precio').value);
-
-            const p = window.productos.find(prod => prod.idDoc == pId);
-            if (p.stock < cantidad) {
-                alert('¡Stock insuficiente para realizar esta venta!');
+            
+            const rows = document.querySelectorAll('.venta-item-row');
+            if (rows.length === 0) {
+                alert('Debes agregar al menos un producto a la venta.');
                 return;
             }
 
-            // Descontar Stock en la nube
-            const nuevoStock = p.stock - cantidad;
-            await window.actualizarStockCloud(p.idDoc, nuevoStock);
+            const items = [];
+            let totalVenta = 0;
+            let totalCosto = 0;
+            let gananciaTotal = 0;
+
+            // Validación previa de stock para todos los ítems
+            for (let row of rows) {
+                const prodId = row.querySelector('.venta-row-prod').value;
+                const cantidad = parseInt(row.querySelector('.venta-row-cant').value);
+                const precioVentaUnitario = parseFloat(row.querySelector('.venta-row-precio').value);
+
+                if (!prodId) {
+                    alert('Por favor selecciona un producto en todas las filas.');
+                    return;
+                }
+
+                const p = window.productos.find(prod => prod.idDoc === prodId);
+                if (!p) {
+                    alert('Producto no encontrado.');
+                    return;
+                }
+
+                if (p.stock < cantidad) {
+                    alert(`¡Stock insuficiente para "${p.nombre}"! Stock actual: ${p.stock}, Cantidad solicitada: ${cantidad}`);
+                    return;
+                }
+
+                items.push({
+                    productoId: p.idDoc,
+                    productoNombre: p.nombre,
+                    cantidad,
+                    costoUnitario: p.costo,
+                    precioVentaUnitario,
+                    totalVentaItem: cantidad * precioVentaUnitario,
+                    totalCostoItem: cantidad * p.costo,
+                    gananciaItem: (cantidad * precioVentaUnitario) - (cantidad * p.costo)
+                });
+
+                totalVenta += cantidad * precioVentaUnitario;
+                totalCosto += cantidad * p.costo;
+                gananciaTotal += (cantidad * precioVentaUnitario) - (cantidad * p.costo);
+            }
+
+            // Descuento automático de stock para cada producto en la nube
+            for (let item of items) {
+                const p = window.productos.find(prod => prod.idDoc === item.productoId);
+                const nuevoStock = p.stock - item.cantidad;
+                await window.actualizarStockCloud(p.idDoc, nuevoStock);
+            }
 
             const vData = {
                 fecha,
                 cliente,
-                productoId: p.idDoc,
-                productoNombre: p.nombre,
-                cantidad,
-                costoUnitario: p.costo,
-                precioVentaUnitario: precioVenta,
-                totalVenta: cantidad * precioVenta,
-                totalCosto: cantidad * p.costo,
-                ganancia: (cantidad * precioVenta) - (cantidad * p.costo)
+                items,
+                totalVenta,
+                totalCosto,
+                ganancia: gananciaTotal
             };
 
             await window.guardarVentaCloud(vData);
@@ -635,17 +705,24 @@
             const tbody = document.getElementById('tabla-ventas');
             tbody.innerHTML = '';
             window.ventas.slice().reverse().forEach(v => {
+                let productosHtml = '';
+                if (v.items && Array.isArray(v.items)) {
+                    productosHtml = v.items.map(i => `<div class="text-xs py-0.5">• <span class="font-semibold">${i.productoNombre}</span> (x${i.cantidad})</div>`).join('');
+                } else {
+                    // Compatibilidad con registros anteriores de un solo producto
+                    productosHtml = `<div class="text-xs">• <span class="font-semibold">${v.productoNombre || 'Producto'}</span> (x${v.cantidad || 1})</div>`;
+                }
+
                 tbody.innerHTML += `
-                    <tr class="hover:bg-gray-50">
-                        <td class="py-2 px-4">${v.fecha}</td>
-                        <td class="py-2 px-4 font-bold text-gray-700">${v.cliente}</td>
-                        <td class="py-2 px-4">${v.productoNombre}</td>
-                        <td class="py-2 px-4 text-center">${v.cantidad}</td>
-                        <td class="py-2 px-4 text-right text-blue-600 font-medium">${formatMoney(v.totalVenta)}</td>
-                        <td class="py-2 px-4 text-right text-amber-600">${formatMoney(v.totalCosto)}</td>
-                        <td class="py-2 px-4 text-right text-emerald-600 font-bold">${formatMoney(v.ganancia)}</td>
-                        <td class="py-2 px-4 text-center">
-                            <button onclick="deleteVenta('${v.idDoc}')" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                    <tr class="hover:bg-gray-50 border-b">
+                        <td class="py-3 px-4 align-top">${v.fecha}</td>
+                        <td class="py-3 px-4 align-top font-bold text-gray-700">${v.cliente}</td>
+                        <td class="py-3 px-4 align-top">${productosHtml}</td>
+                        <td class="py-3 px-4 align-top text-right text-blue-600 font-medium">${formatMoney(v.totalVenta)}</td>
+                        <td class="py-3 px-4 align-top text-right text-amber-600">${formatMoney(v.totalCosto)}</td>
+                        <td class="py-3 px-4 align-top text-right text-emerald-600 font-bold">${formatMoney(v.ganancia)}</td>
+                        <td class="py-3 px-4 align-top text-center">
+                            <button onclick="deleteVenta('${v.idDoc}')" class="text-red-500 hover:text-red-700" title="Eliminar Venta"><i class="fa-solid fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -747,7 +824,7 @@
             });
         }
 
-        // --- DASHBOARD, SEMANAS Y DESCUENTO DE GASTOS ---
+        // --- DASHBOARD, SEMANAS Y BALANCE DE STOCK ---
         function getWeekKey(dateStr) {
             const date = new Date(dateStr + 'T00:00:00');
             const startOfYear = new Date(date.getFullYear(), 0, 1);
@@ -762,10 +839,20 @@
             const gTot = window.gastos.reduce((s, g) => s + g.monto, 0);
             const ganLimpia = vTot - cTot - gTot;
 
+            // Cálculo total de stock para la página principal
+            let totalCostoStock = 0;
+            let totalVentaStock = 0;
+            window.productos.forEach(p => {
+                totalCostoStock += (p.stock * p.costo);
+                totalVentaStock += (p.stock * p.precio);
+            });
+
             document.getElementById('kpi-ventas').innerText = formatMoney(vTot);
             document.getElementById('kpi-costos').innerText = formatMoney(cTot);
             document.getElementById('kpi-gastos').innerText = formatMoney(gTot);
             document.getElementById('kpi-ganancia').innerText = formatMoney(ganLimpia);
+            document.getElementById('kpi-dash-stock-costo').innerText = formatMoney(totalCostoStock);
+            document.getElementById('kpi-dash-stock-venta').innerText = formatMoney(totalVentaStock);
 
             const semanasMap = {};
 
