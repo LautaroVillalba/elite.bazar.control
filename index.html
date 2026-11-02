@@ -107,7 +107,7 @@
                 </div>
             </div>
 
-            <!-- NUEVA SECCIÓN: ESTADÍSTICAS DE VENTAS Y REPOSICIÓN DE STOCK -->
+            <!-- SECCIÓN: ESTADÍSTICAS DE VENTAS Y REPOSICIÓN DE STOCK -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <!-- Lo más vendido -->
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80">
@@ -406,11 +406,21 @@
         </div>
     </div>
 
-    <!-- SCRIPTS DE FIREBASE Y APLICACIÓN -->
+    <!-- SCRIPTS DE FIREBASE Y APLICACIÓN OPTIMIZADOS EN TIEMPO REAL -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { 
+            initializeFirestore, 
+            persistentLocalCache, 
+            persistentMultipleTabManager,
+            collection, 
+            onSnapshot, 
+            addDoc, 
+            updateDoc, 
+            deleteDoc, 
+            doc 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBimZwin5waOrIuXMO-4-yRmKDNn3sdtQE",
@@ -424,55 +434,49 @@
 
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
-        const db = getFirestore(app);
+
+        // Inicializar Firestore con Caché Local Persistente y Multi-pestaña para sincronización en tiempo real
+        const db = initializeFirestore(app, {
+            localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+        });
 
         window.productos = [];
         window.ventas = [];
         window.gastos = [];
         window.chartInstance = null;
 
-        // Carga rápida con caché local temporal si existe para mejorar velocidad
-        window.loadCloudData = async function(silent = false) {
-            try {
-                const [prodSnapshot, ventasSnapshot, gastosSnapshot] = await Promise.all([
-                    getDocs(collection(db, "productos")),
-                    getDocs(collection(db, "ventas")),
-                    getDocs(collection(db, "gastos"))
-                ]);
-
-                window.productos = [];
-                prodSnapshot.forEach((docSnap) => {
-                    window.productos.push({ idDoc: docSnap.id, ...docSnap.data() });
-                });
-
-                window.ventas = [];
-                ventasSnapshot.forEach((docSnap) => {
-                    window.ventas.push({ idDoc: docSnap.id, ...docSnap.data() });
-                });
-
-                window.gastos = [];
-                gastosSnapshot.forEach((docSnap) => {
-                    window.gastos.push({ idDoc: docSnap.id, ...docSnap.data() });
-                });
-
+        // Escuchar cambios en Tiempo Real para sincronización inmediata entre Celular y Computadora
+        window.initRealtimeListeners = function() {
+            // Escuchar Productos
+            onSnapshot(collection(db, "productos"), (snapshot) => {
+                window.productos = snapshot.docs.map(docSnap => ({ idDoc: docSnap.id, ...docSnap.data() }));
                 renderAll();
-            } catch (error) {
-                console.error("Error al cargar datos de Firebase:", error);
-            }
+            }, (error) => console.error("Error en realtime productos:", error));
+
+            // Escuchar Ventas
+            onSnapshot(collection(db, "ventas"), (snapshot) => {
+                window.ventas = snapshot.docs.map(docSnap => ({ idDoc: docSnap.id, ...docSnap.data() }));
+                renderAll();
+            }, (error) => console.error("Error en realtime ventas:", error));
+
+            // Escuchar Gastos
+            onSnapshot(collection(db, "gastos"), (snapshot) => {
+                window.gastos = snapshot.docs.map(docSnap => ({ idDoc: docSnap.id, ...docSnap.data() }));
+                renderAll();
+            }, (error) => console.error("Error en realtime gastos:", error));
         };
 
+        // Operaciones de Escritura
         window.guardarProductoCloud = async function(pData, docId) {
             if (docId) {
                 await updateDoc(doc(db, "productos", docId), pData);
             } else {
                 await addDoc(collection(db, "productos"), pData);
             }
-            await window.loadCloudData(true);
         };
 
         window.eliminarProductoCloud = async function(docId) {
             await deleteDoc(doc(db, "productos", docId));
-            await window.loadCloudData(true);
         };
 
         window.actualizarStockCloud = async function(docId, nuevoStock) {
@@ -481,28 +485,26 @@
 
         window.guardarVentaCloud = async function(vData) {
             await addDoc(collection(db, "ventas"), vData);
-            await window.loadCloudData(true);
         };
 
         window.eliminarVentaCloud = async function(docId) {
             await deleteDoc(doc(db, "ventas", docId));
-            await window.loadCloudData(true);
         };
 
         window.guardarGastoCloud = async function(gData) {
             await addDoc(collection(db, "gastos"), gData);
-            await window.loadCloudData(true);
         };
 
         window.eliminarGastoCloud = async function(docId) {
             await deleteDoc(doc(db, "gastos", docId));
-            await window.loadCloudData(true);
         };
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('venta-fecha').valueAsDate = new Date();
             document.getElementById('gasto-fecha').valueAsDate = new Date();
-            window.loadCloudData();
+            
+            // Iniciar sincronización en vivo
+            window.initRealtimeListeners();
 
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape') {
@@ -789,7 +791,7 @@
                     gananciaTotal += (cantidad * precioVentaUnitario) - (cantidad * p.costo);
                 }
 
-                // Actualizar stock
+                // Actualizar stock en tiempo real
                 for (let item of items) {
                     const p = window.productos.find(prod => prod.idDoc === item.productoId);
                     const nuevoStock = p.stock - item.cantidad;
@@ -805,7 +807,7 @@
                     return;
                 }
                 totalCosto = 0;
-                gananciaTotal = totalVenta; // 100% ganancia al no descontar costo de inventario
+                gananciaTotal = totalVenta;
                 items.push({
                     productoId: 'libre',
                     productoNombre: concepto,
@@ -829,8 +831,6 @@
 
             await window.guardarVentaCloud(vData);
             closeModal('modal-venta');
-
-            // Generar texto para copiar y pegar
             generarTextoParaCopiar(vData);
         }
 
@@ -997,7 +997,6 @@
 
         // --- ESTADÍSTICAS EXTRA (Más vendidos y faltantes) ---
         function renderEstadisticasExtra() {
-            // 1. Más vendidos
             const prodVendidosMap = {};
             window.ventas.forEach(v => {
                 if (v.items && Array.isArray(v.items)) {
@@ -1033,7 +1032,6 @@
                 });
             }
 
-            // 2. Faltantes de reponer (stock < 5 o stock == 0)
             const containerFaltantes = document.getElementById('stats-faltantes');
             containerFaltantes.innerHTML = '';
 
