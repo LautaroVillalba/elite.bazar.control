@@ -770,11 +770,6 @@
                         return;
                     }
 
-                    if (p.stock < cantidad) {
-                        alert(`¡Stock insuficiente para "${p.nombre}"! Stock actual: ${p.stock}, Cantidad solicitada: ${cantidad}`);
-                        return;
-                    }
-
                     items.push({
                         productoId: p.idDoc,
                         productoNombre: p.nombre,
@@ -794,7 +789,7 @@
                 // Actualizar stock en tiempo real
                 for (let item of items) {
                     const p = window.productos.find(prod => prod.idDoc === item.productoId);
-                    const nuevoStock = p.stock - item.cantidad;
+                    const nuevoStock = Math.max(0, p.stock - item.cantidad);
                     await window.actualizarStockCloud(p.idDoc, nuevoStock);
                 }
 
