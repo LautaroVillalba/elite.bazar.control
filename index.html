@@ -1,1 +1,760 @@
-# elite.bazar.control
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Stock, Ventas y Ganancias</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <i class="fa-solid fa-boxes-packing text-2xl text-blue-400"></i>
+                <h1 class="text-xl font-bold tracking-wide">Gestión de Mercadería y Ventas</h1>
+            </div>
+            <nav class="flex flex-wrap gap-2">
+                <button onclick="switchTab('dashboard')" id="btn-dashboard" class="tab-btn px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition"><i class="fa-solid fa-chart-line mr-2"></i>Resumen y Semanas</button>
+                <button onclick="switchTab('clientes')" id="btn-clientes" class="tab-btn px-4 py-2 rounded-lg bg-slate-800 text-slate-300 font-medium hover:bg-slate-700 transition"><i class="fa-solid fa-users mr-2"></i>Por Cliente</button>
+                <button onclick="switchTab('productos')" id="btn-productos" class="tab-btn px-4 py-2 rounded-lg bg-slate-800 text-slate-300 font-medium hover:bg-slate-700 transition"><i class="fa-solid fa-box mr-2"></i>Productos</button>
+                <button onclick="switchTab('ventas')" id="btn-ventas" class="tab-btn px-4 py-2 rounded-lg bg-slate-800 text-slate-300 font-medium hover:bg-slate-700 transition"><i class="fa-solid fa-cart-shopping mr-2"></i>Ventas</button>
+                <button onclick="switchTab('gastos')" id="btn-gastos" class="tab-btn px-4 py-2 rounded-lg bg-slate-800 text-slate-300 font-medium hover:bg-slate-700 transition"><i class="fa-solid fa-receipt mr-2"></i>Gastos</button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+        <!-- ================= TAB 1: DASHBOARD Y SEMANAS ================= -->
+        <section id="tab-dashboard" class="tab-content active space-y-6">
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <p class="text-sm font-medium text-gray-500">Ventas Totales</p>
+                    <p id="kpi-ventas" class="text-2xl font-bold text-blue-600">$ 0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <p class="text-sm font-medium text-gray-500">Costo de Mercadería</p>
+                    <p id="kpi-costos" class="text-2xl font-bold text-amber-600">$ 0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <p class="text-sm font-medium text-gray-500">Gastos Operativos</p>
+                    <p id="kpi-gastos" class="text-2xl font-bold text-red-600">$ 0</p>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <p class="text-sm font-medium text-gray-500">Ganancia Neta Limpia</p>
+                    <p id="kpi-ganancia" class="text-2xl font-bold text-emerald-600">$ 0</p>
+                </div>
+            </div>
+
+            <!-- Gráfico y Desglose por Semanas -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Gráfico (2 columnas) -->
+                <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex flex-col justify-between">
+                    <h3 class="text-lg font-bold text-gray-700 mb-4"><i class="fa-solid fa-chart-area mr-2 text-blue-500"></i>Evolución Semanal de Ganancias (Netas de Gastos)</h3>
+                    <div class="h-64">
+                        <canvas id="chartSemanas"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Tabla por Semanas (1 columna) -->
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                    <h3 class="text-lg font-bold text-gray-700 mb-4"><i class="fa-solid fa-calendar-week mr-2 text-indigo-500"></i>Resumen por Semanas (7 Días)</h3>
+                    <div class="overflow-y-auto max-h-64">
+                        <table class="w-full text-sm text-left text-gray-600">
+                            <thead class="text-xs uppercase bg-gray-50 text-gray-500 sticky top-0">
+                                <tr>
+                                    <th class="py-2 px-3">Semana</th>
+                                    <th class="py-2 px-3 text-right">Gastos</th>
+                                    <th class="py-2 px-3 text-right">Ganancia Neta</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-semanas" class="divide-y divide-gray-100">
+                                <!-- JS inyecta datos -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 2: GANANCIAS POR CLIENTE ================= -->
+        <section id="tab-clientes" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-users text-emerald-500 mr-2"></i>Detalle de Ganancias por Cliente</h2>
+                    <input type="text" id="search-cliente" oninput="renderClientes()" placeholder="🔍 Buscar cliente..." class="px-4 py-2 border rounded-lg text-sm w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="cards-clientes">
+                    <!-- Cards de Clientes inyectadas con JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 3: PRODUCTOS (STOCK) ================= -->
+        <section id="tab-productos" class="tab-content space-y-6">
+            <!-- KPI Monto Acumulado de Stock -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Inversión Acumulada en Stock (Costo)</p>
+                        <p id="kpi-stock-costo" class="text-2xl font-bold text-amber-600">$ 0</p>
+                    </div>
+                    <div class="bg-amber-50 p-3 rounded-full text-amber-500"><i class="fa-solid fa-vault text-xl"></i></div>
+                </div>
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-gray-500">Valor Potencial de Venta del Stock</p>
+                        <p id="kpi-stock-venta" class="text-2xl font-bold text-blue-600">$ 0</p>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-full text-blue-500"><i class="fa-solid fa-cash-register text-xl"></i></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-boxes-stacked text-amber-500 mr-2"></i>Inventario y Costos de Productos</h2>
+                    <button onclick="openModalProducto()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"><i class="fa-solid fa-plus mr-2"></i>Nuevo Producto</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-600">
+                        <thead class="text-xs uppercase bg-gray-50 text-gray-500 border-b">
+                            <tr>
+                                <th class="py-3 px-4">Foto</th>
+                                <th class="py-3 px-4">Producto</th>
+                                <th class="py-3 px-4 text-center">Stock</th>
+                                <th class="py-3 px-4 text-right">Costo ($)</th>
+                                <th class="py-3 px-4 text-right">Precio Venta ($)</th>
+                                <th class="py-3 px-4 text-right">Ganancia Un. ($)</th>
+                                <th class="py-3 px-4 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-productos" class="divide-y divide-gray-100">
+                            <!-- JS inyecta filas -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 4: VENTAS ================= -->
+        <section id="tab-ventas" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-cart-shopping text-blue-500 mr-2"></i>Registro de Ventas</h2>
+                    <button onclick="openModalVenta()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"><i class="fa-solid fa-plus mr-2"></i>Registrar Venta</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-600">
+                        <thead class="text-xs uppercase bg-gray-50 text-gray-500 border-b">
+                            <tr>
+                                <th class="py-3 px-4">Fecha</th>
+                                <th class="py-3 px-4">Cliente</th>
+                                <th class="py-3 px-4">Producto</th>
+                                <th class="py-3 px-4 text-center">Cant.</th>
+                                <th class="py-3 px-4 text-right">Total Venta</th>
+                                <th class="py-3 px-4 text-right">Costo Total</th>
+                                <th class="py-3 px-4 text-right">Ganancia Limpia</th>
+                                <th class="py-3 px-4 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-ventas" class="divide-y divide-gray-100">
+                            <!-- JS inyecta ventas -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TAB 5: GASTOS ================= -->
+        <section id="tab-gastos" class="tab-content space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                    <h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-wallet text-red-500 mr-2"></i>Gastos Operativos</h2>
+                    <button onclick="openModalGasto()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"><i class="fa-solid fa-plus mr-2"></i>Nuevo Gasto</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left text-gray-600">
+                        <thead class="text-xs uppercase bg-gray-50 text-gray-500 border-b">
+                            <tr>
+                                <th class="py-3 px-4">Fecha</th>
+                                <th class="py-3 px-4">Concepto / Descripción</th>
+                                <th class="py-3 px-4 text-right">Monto ($)</th>
+                                <th class="py-3 px-4 text-center">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-gastos" class="divide-y divide-gray-100">
+                            <!-- JS inyecta gastos -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL PRODUCTO -->
+    <div id="modal-producto" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <h3 id="modal-prod-title" class="text-lg font-bold text-gray-800">Agregar Producto</h3>
+            <form id="form-producto" onsubmit="saveProducto(event)" class="space-y-3">
+                <input type="hidden" id="prod-id">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Nombre del Producto</label>
+                    <input type="text" id="prod-nombre" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Stock Inicial</label>
+                        <input type="number" id="prod-stock" required min="0" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Costo Unitario ($)</label>
+                        <input type="number" step="0.01" id="prod-costo" required min="0" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Precio de Venta ($)</label>
+                    <input type="number" step="0.01" id="prod-precio" required min="0" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Imagen del Producto</label>
+                    <input type="file" id="prod-foto" accept="image/*" class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeModal('modal-producto')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL VENTA -->
+    <div id="modal-venta" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <h3 class="text-lg font-bold text-gray-800">Registrar Nueva Venta</h3>
+            <form id="form-venta" onsubmit="saveVenta(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Fecha</label>
+                    <input type="date" id="venta-fecha" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Nombre del Cliente</label>
+                    <input type="text" id="venta-cliente" placeholder="Ej: Juan Pérez" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Seleccionar Producto</label>
+                    <select id="venta-producto" required onchange="updateVentaPreview()" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <!-- JS inyecta productos -->
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Cantidad</label>
+                        <input type="number" id="venta-cantidad" value="1" min="1" required onchange="updateVentaPreview()" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Precio Venta Unit. ($)</label>
+                        <input type="number" step="0.01" id="venta-precio" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeModal('modal-venta')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Registrar Venta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL GASTO -->
+    <div id="modal-gasto" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+            <h3 class="text-lg font-bold text-gray-800">Registrar Gasto Operativo</h3>
+            <form id="form-gasto" onsubmit="saveGasto(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Fecha</label>
+                    <input type="date" id="gasto-fecha" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Concepto / Descripción</label>
+                    <input type="text" id="gasto-concepto" placeholder="Ej: Flete, Publicidad..." required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 uppercase mb-1">Monto ($)</label>
+                    <input type="number" step="0.01" id="gasto-monto" required min="0" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div class="flex justify-end gap-2 pt-3">
+                    <button type="button" onclick="closeModal('modal-gasto')" class="px-4 py-2 border rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700">Guardar Gasto</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL -->
+    <script>
+        // BASE DE DATOS LOCALSTORAGE
+        let productos = JSON.parse(localStorage.getItem('app_productos')) || [];
+        let ventas = JSON.parse(localStorage.getItem('app_ventas')) || [];
+        let gastos = JSON.parse(localStorage.getItem('app_gastos')) || [];
+
+        let chartInstance = null;
+
+        // INICIALIZACIÓN Y ATAJOS DE TECLADO (ESC / ENTER)
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('venta-fecha').valueAsDate = new Date();
+            document.getElementById('gasto-fecha').valueAsDate = new Date();
+            renderAll();
+
+            // Event listener global para las teclas ESC y ENTER
+            document.addEventListener('keydown', (e) => {
+                const modProducto = document.getElementById('modal-producto');
+                const modVenta = document.getElementById('modal-venta');
+                const modGasto = document.getElementById('modal-gasto');
+
+                const isProdOpen = !modProducto.classList.contains('hidden');
+                const isVentaOpen = !modVenta.classList.contains('hidden');
+                const isGastoOpen = !modGasto.classList.contains('hidden');
+
+                if (e.key === 'Escape') {
+                    if (isProdOpen) closeModal('modal-producto');
+                    if (isVentaOpen) closeModal('modal-venta');
+                    if (isGastoOpen) closeModal('modal-gasto');
+                }
+
+                if (e.key === 'Enter') {
+                    // Si hay un modal abierto, confirmar/enviar el formulario activo
+                    if (isProdOpen && document.activeElement.tagName !== 'BUTTON') {
+                        e.preventDefault();
+                        document.getElementById('form-producto').requestSubmit();
+                    } else if (isVentaOpen && document.activeElement.tagName !== 'BUTTON') {
+                        e.preventDefault();
+                        document.getElementById('form-venta').requestSubmit();
+                    } else if (isGastoOpen && document.activeElement.tagName !== 'BUTTON') {
+                        e.preventDefault();
+                        document.getElementById('form-gasto').requestSubmit();
+                    }
+                }
+            });
+        });
+
+        function saveState() {
+            localStorage.setItem('app_productos', JSON.stringify(productos));
+            localStorage.setItem('app_ventas', JSON.stringify(ventas));
+            localStorage.setItem('app_gastos', JSON.stringify(gastos));
+            renderAll();
+        }
+
+        // TAB SWITCHER
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('bg-blue-600', 'text-white');
+                b.classList.add('bg-slate-800', 'text-slate-300');
+            });
+
+            document.getElementById('tab-' + tabId).classList.add('active');
+            const btn = document.getElementById('btn-' + tabId);
+            btn.classList.remove('bg-slate-800', 'text-slate-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+        }
+
+        // RENDER GENERAL
+        function renderAll() {
+            renderProductos();
+            renderVentas();
+            renderGastos();
+            renderClientes();
+            renderDashboard();
+        }
+
+        // FORMATO MONEDA
+        function formatMoney(amount) {
+            return '$ ' + Number(amount).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // --- PRODUCTOS Y ACUMULADO DE STOCK ---
+        function openModalProducto(id = null) {
+            const modal = document.getElementById('modal-producto');
+            const form = document.getElementById('form-producto');
+            form.reset();
+            
+            if (id) {
+                const p = productos.find(prod => prod.id === id);
+                document.getElementById('modal-prod-title').innerText = "Editar Producto";
+                document.getElementById('prod-id').value = p.id;
+                document.getElementById('prod-nombre').value = p.nombre;
+                document.getElementById('prod-stock').value = p.stock;
+                document.getElementById('prod-costo').value = p.costo;
+                document.getElementById('prod-precio').value = p.precio;
+            } else {
+                document.getElementById('modal-prod-title').innerText = "Agregar Producto";
+                document.getElementById('prod-id').value = "";
+            }
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('prod-nombre').focus();
+        }
+
+        function saveProducto(e) {
+            e.preventDefault();
+            const id = document.getElementById('prod-id').value;
+            const nombre = document.getElementById('prod-nombre').value;
+            const stock = parseInt(document.getElementById('prod-stock').value);
+            const costo = parseFloat(document.getElementById('prod-costo').value);
+            const precio = parseFloat(document.getElementById('prod-precio').value);
+            const fotoInput = document.getElementById('prod-foto');
+
+            const handleSave = (fotoUrl) => {
+                if (id) {
+                    const idx = productos.findIndex(p => p.id == id);
+                    productos[idx] = { ...productos[idx], nombre, stock, costo, precio, foto: fotoUrl || productos[idx].foto };
+                } else {
+                    productos.push({ id: Date.now(), nombre, stock, costo, precio, foto: fotoUrl || '' });
+                }
+                saveState();
+                closeModal('modal-producto');
+            };
+
+            if (fotoInput.files && fotoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = (evt) => handleSave(evt.target.result);
+                reader.readAsDataURL(fotoInput.files[0]);
+            } else {
+                handleSave(null);
+            }
+        }
+
+        function deleteProducto(id) {
+            if (confirm('¿Eliminar este producto?')) {
+                productos = productos.filter(p => p.id !== id);
+                saveState();
+            }
+        }
+
+        function renderProductos() {
+            const tbody = document.getElementById('tabla-productos');
+            tbody.innerHTML = '';
+            
+            let totalCostoStock = 0;
+            let totalVentaStock = 0;
+
+            productos.forEach(p => {
+                const ganancia = p.precio - p.costo;
+                totalCostoStock += (p.stock * p.costo);
+                totalVentaStock += (p.stock * p.precio);
+
+                const img = p.foto ? `<img src="${p.foto}" class="w-10 h-10 object-cover rounded-lg border">` : `<div class="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400"><i class="fa-solid fa-box"></i></div>`;
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 px-4">${img}</td>
+                        <td class="py-2 px-4 font-semibold text-gray-800">${p.nombre}</td>
+                        <td class="py-2 px-4 text-center font-bold ${p.stock < 5 ? 'text-red-500' : 'text-gray-700'}">${p.stock}</td>
+                        <td class="py-2 px-4 text-right">${formatMoney(p.costo)}</td>
+                        <td class="py-2 px-4 text-right text-blue-600 font-medium">${formatMoney(p.precio)}</td>
+                        <td class="py-2 px-4 text-right text-emerald-600 font-bold">${formatMoney(ganancia)}</td>
+                        <td class="py-2 px-4 text-center space-x-2">
+                            <button onclick="openModalProducto(${p.id})" class="text-blue-500 hover:text-blue-700" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteProducto(${p.id})" class="text-red-500 hover:text-red-700" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Actualizar KPIs de monto acumulado en todo el stock
+            document.getElementById('kpi-stock-costo').innerText = formatMoney(totalCostoStock);
+            document.getElementById('kpi-stock-venta').innerText = formatMoney(totalVentaStock);
+        }
+
+        // --- VENTAS ---
+        function openModalVenta() {
+            if (productos.length === 0) {
+                alert('Primero debes agregar productos al inventario.');
+                return;
+            }
+            const modal = document.getElementById('modal-venta');
+            const select = document.getElementById('venta-producto');
+            select.innerHTML = '';
+            productos.forEach(p => {
+                select.innerHTML += `<option value="${p.id}">${p.nombre} (Stock: ${p.stock})</option>`;
+            });
+            updateVentaPreview();
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('venta-cliente').focus();
+        }
+
+        function updateVentaPreview() {
+            const pId = document.getElementById('venta-producto').value;
+            const p = productos.find(prod => prod.id == pId);
+            if (p) {
+                document.getElementById('venta-precio').value = p.precio;
+            }
+        }
+
+        function saveVenta(e) {
+            e.preventDefault();
+            const fecha = document.getElementById('venta-fecha').value;
+            const cliente = document.getElementById('venta-cliente').value.trim().toUpperCase();
+            const pId = document.getElementById('venta-producto').value;
+            const cantidad = parseInt(document.getElementById('venta-cantidad').value);
+            const precioVenta = parseFloat(document.getElementById('venta-precio').value);
+
+            const p = productos.find(prod => prod.id == pId);
+            if (p.stock < cantidad) {
+                alert('¡Stock insuficiente para realizar esta venta!');
+                return;
+            }
+
+            // Descontar Stock Automáticamente
+            p.stock -= cantidad;
+
+            ventas.push({
+                id: Date.now(),
+                fecha,
+                cliente,
+                productoId: p.id,
+                productoNombre: p.nombre,
+                cantidad,
+                costoUnitario: p.costo,
+                precioVentaUnitario: precioVenta,
+                totalVenta: cantidad * precioVenta,
+                totalCosto: cantidad * p.costo,
+                ganancia: (cantidad * precioVenta) - (cantidad * p.costo)
+            });
+
+            saveState();
+            closeModal('modal-venta');
+        }
+
+        function deleteVenta(id) {
+            if (confirm('¿Eliminar registro de venta?')) {
+                ventas = ventas.filter(v => v.id !== id);
+                saveState();
+            }
+        }
+
+        function renderVentas() {
+            const tbody = document.getElementById('tabla-ventas');
+            tbody.innerHTML = '';
+            ventas.slice().reverse().forEach(v => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 px-4">${v.fecha}</td>
+                        <td class="py-2 px-4 font-bold text-gray-700">${v.cliente}</td>
+                        <td class="py-2 px-4">${v.productoNombre}</td>
+                        <td class="py-2 px-4 text-center">${v.cantidad}</td>
+                        <td class="py-2 px-4 text-right text-blue-600 font-medium">${formatMoney(v.totalVenta)}</td>
+                        <td class="py-2 px-4 text-right text-amber-600">${formatMoney(v.totalCosto)}</td>
+                        <td class="py-2 px-4 text-right text-emerald-600 font-bold">${formatMoney(v.ganancia)}</td>
+                        <td class="py-2 px-4 text-center">
+                            <button onclick="deleteVenta(${v.id})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- GASTOS ---
+        function openModalGasto() {
+            const modal = document.getElementById('modal-gasto');
+            document.getElementById('form-gasto').reset();
+            document.getElementById('gasto-fecha').valueAsDate = new Date();
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.getElementById('gasto-concepto').focus();
+        }
+
+        function saveGasto(e) {
+            e.preventDefault();
+            const fecha = document.getElementById('gasto-fecha').value;
+            const concepto = document.getElementById('gasto-concepto').value;
+            const monto = parseFloat(document.getElementById('gasto-monto').value);
+
+            gastos.push({ id: Date.now(), fecha, concepto, monto });
+            saveState();
+            closeModal('modal-gasto');
+        }
+
+        function deleteGasto(id) {
+            if (confirm('¿Eliminar este gasto?')) {
+                gastos = gastos.filter(g => g.id !== id);
+                saveState();
+            }
+        }
+
+        function renderGastos() {
+            const tbody = document.getElementById('tabla-gastos');
+            tbody.innerHTML = '';
+            gastos.slice().reverse().forEach(g => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-2 px-4">${g.fecha}</td>
+                        <td class="py-2 px-4 font-medium text-gray-800">${g.concepto}</td>
+                        <td class="py-2 px-4 text-right text-red-600 font-bold">${formatMoney(g.monto)}</td>
+                        <td class="py-2 px-4 text-center">
+                            <button onclick="deleteGasto(${g.id})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // --- CLIENTES ---
+        function renderClientes() {
+            const container = document.getElementById('cards-clientes');
+            const search = document.getElementById('search-cliente').value.toUpperCase();
+            container.innerHTML = '';
+
+            const clienteMap = {};
+
+            ventas.forEach(v => {
+                if (!clienteMap[v.cliente]) {
+                    clienteMap[v.cliente] = { cliente: v.cliente, compras: 0, totalVenta: 0, totalCosto: 0, ganancia: 0 };
+                }
+                clienteMap[v.cliente].compras += 1;
+                clienteMap[v.cliente].totalVenta += v.totalVenta;
+                clienteMap[v.cliente].totalCosto += v.totalCosto;
+                clienteMap[v.cliente].ganancia += v.ganancia;
+            });
+
+            const listaClientes = Object.values(clienteMap).filter(c => c.cliente.includes(search));
+
+            if (listaClientes.length === 0) {
+                container.innerHTML = `<p class="text-gray-400 col-span-3 text-center py-8">No hay registros de clientes.</p>`;
+                return;
+            }
+
+            listaClientes.sort((a, b) => b.ganancia - a.ganancia).forEach(c => {
+                container.innerHTML += `
+                    <div class="bg-gray-50 p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition">
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-bold text-gray-800 text-lg"><i class="fa-solid fa-user text-blue-500 mr-2"></i>${c.cliente}</h4>
+                            <span class="bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-bold">${c.compras} Venta(s)</span>
+                        </div>
+                        <div class="space-y-1 text-sm">
+                            <div class="flex justify-between text-gray-600">
+                                <span>Ventas Totales:</span>
+                                <span class="font-semibold">${formatMoney(c.totalVenta)}</span>
+                            </div>
+                            <div class="flex justify-between text-gray-600">
+                                <span>Costo Mercadería:</span>
+                                <span class="font-semibold text-amber-600">${formatMoney(c.totalCosto)}</span>
+                            </div>
+                            <div class="border-t pt-2 mt-2 flex justify-between text-base">
+                                <span class="font-bold text-gray-700">Ganancia Neta:</span>
+                                <span class="font-bold text-emerald-600">${formatMoney(c.ganancia)}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- DASHBOARD, SEMANAS Y DESCUENTO DE GASTOS ---
+        function getWeekKey(dateStr) {
+            const date = new Date(dateStr + 'T00:00:00');
+            const startOfYear = new Date(date.getFullYear(), 0, 1);
+            const pastDaysOfYear = (date - startOfYear) / 86400000;
+            const weekNum = Math.ceil((pastDaysOfYear + startOfYear.getDay() + 1) / 7);
+            return `Año ${date.getFullYear()} - Sem. ${weekNum}`;
+        }
+
+        function renderDashboard() {
+            const vTot = ventas.reduce((s, v) => s + v.totalVenta, 0);
+            const cTot = ventas.reduce((s, v) => s + v.totalCosto, 0);
+            const gTot = gastos.reduce((s, g) => s + g.monto, 0);
+            const ganLimpia = vTot - cTot - gTot;
+
+            document.getElementById('kpi-ventas').innerText = formatMoney(vTot);
+            document.getElementById('kpi-costos').innerText = formatMoney(cTot);
+            document.getElementById('kpi-gastos').innerText = formatMoney(gTot);
+            document.getElementById('kpi-ganancia').innerText = formatMoney(ganLimpia);
+
+            // AGRUPAMIENTO POR SEMANAS (VENTAS Y GASTOS DESCONTADOS)
+            const semanasMap = {};
+
+            ventas.forEach(v => {
+                const key = getWeekKey(v.fecha);
+                if (!semanasMap[key]) {
+                    semanasMap[key] = { ventasBrutas: 0, gananciaBruta: 0, gastos: 0, gananciaNeta: 0 };
+                }
+                semanasMap[key].ventasBrutas += v.totalVenta;
+                semanasMap[key].gananciaBruta += v.ganancia;
+            });
+
+            gastos.forEach(g => {
+                const key = getWeekKey(g.fecha);
+                if (!semanasMap[key]) {
+                    semanasMap[key] = { ventasBrutas: 0, gananciaBruta: 0, gastos: 0, gananciaNeta: 0 };
+                }
+                semanasMap[key].gastos += g.monto;
+            });
+
+            // Calcular ganancia neta final por semana restando los gastos de esa semana
+            Object.keys(semanasMap).forEach(key => {
+                semanasMap[key].gananciaNeta = semanasMap[key].gananciaBruta - semanasMap[key].gastos;
+            });
+
+            const tbodySem = document.getElementById('tabla-semanas');
+            tbodySem.innerHTML = '';
+            
+            // Ordenar semanas cronológicamente inversa o alfabética
+            const labels = Object.keys(semanasMap).sort().reverse();
+            const dataGananciasNetas = [];
+
+            labels.forEach(sem => {
+                const dataSem = semanasMap[sem];
+                dataGananciasNetas.push(dataSem.gananciaNeta);
+                tbodySem.innerHTML += `
+                    <tr>
+                        <td class="py-2 px-3 font-semibold text-gray-700">${sem}</td>
+                        <td class="py-2 px-3 text-right text-red-500">-${formatMoney(dataSem.gastos)}</td>
+                        <td class="py-2 px-3 text-right font-bold ${dataSem.gananciaNeta >= 0 ? 'text-emerald-600' : 'text-red-600'}">${formatMoney(dataSem.gananciaNeta)}</td>
+                    </tr>
+                `;
+            });
+
+            // CHARTS.JS (Evolución de Ganancia Neta Semanal descontando Gastos)
+            const ctx = document.getElementById('chartSemanas').getContext('2d');
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels.slice().reverse(), // Orden cronológico para el gráfico
+                    datasets: [{
+                        label: 'Ganancia Neta (Post-Gastos) ($)',
+                        data: dataGananciasNetas.slice().reverse(),
+                        backgroundColor: '#10b981',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // CERRAR MODAL
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('flex');
+            modal.classList.add('hidden');
+        }
+    </script>
+</body>
+</html># elite.bazar.control
