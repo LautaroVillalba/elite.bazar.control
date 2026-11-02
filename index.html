@@ -686,22 +686,40 @@
             const lblInv = document.getElementById('label-tipo-inv');
             const lblLibre = document.getElementById('label-tipo-libre');
 
+            const inputMontoLibre = document.getElementById('venta-libre-monto');
+
             if (tipo === 'inventario') {
                 secProd.classList.remove('hidden');
                 secLibre.classList.add('hidden');
                 lblInv.classList.add('bg-white', 'shadow-xs');
                 lblLibre.classList.remove('bg-white', 'shadow-xs');
+
+                inputMontoLibre.removeAttribute('required');
+
+                // Activar requeridos en filas visibles
+                document.querySelectorAll('.venta-row-prod, .venta-row-cant, .venta-row-precio').forEach(el => {
+                    el.setAttribute('required', 'required');
+                });
             } else {
                 secProd.classList.add('hidden');
                 secLibre.classList.remove('hidden');
                 lblLibre.classList.add('bg-white', 'shadow-xs');
                 lblInv.classList.remove('bg-white', 'shadow-xs');
+
+                inputMontoLibre.setAttribute('required', 'required');
+
+                // Remover requeridos de los campos de inventario ocultos para permitir el envío del form
+                document.querySelectorAll('.venta-row-prod, .venta-row-cant, .venta-row-precio').forEach(el => {
+                    el.removeAttribute('required');
+                });
             }
         }
 
         function addVentaItemRow(productId = '', cantidad = 1, precio = '') {
             const container = document.getElementById('venta-productos-list');
             const rowId = 'row-' + Date.now() + Math.random();
+            const tipo = document.querySelector('input[name="tipo-venta"]:checked')?.value || 'inventario';
+            const isReq = tipo === 'inventario' ? 'required' : '';
             
             let options = '<option value="">Seleccionar producto...</option>';
             window.productos.forEach(p => {
@@ -715,12 +733,12 @@
             div.className = 'flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200 venta-item-row';
             div.id = rowId;
             div.innerHTML = `
-                <select class="venta-row-prod w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-blue-500" onchange="onVentaProductChange('${rowId}')" required>
+                <select class="venta-row-prod w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-1 focus:ring-blue-500" onchange="onVentaProductChange('${rowId}')" ${isReq}>
                     ${options}
                 </select>
                 <div class="flex gap-2">
-                    <input type="number" inputmode="numeric" pattern="[0-9]*" class="venta-row-cant w-1/2 sm:w-20 px-2 py-2 bg-white border border-slate-200 rounded-xl text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500" value="${cantidad}" min="1" required placeholder="Cant">
-                    <input type="number" inputmode="numeric" step="1" class="venta-row-precio w-1/2 sm:w-28 px-2 py-2 bg-white border border-slate-200 rounded-xl text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500" value="${precio !== '' ? Math.round(precio) : (defaultPrecio !== '' ? Math.round(defaultPrecio) : '')}" required placeholder="Precio">
+                    <input type="number" inputmode="numeric" pattern="[0-9]*" class="venta-row-cant w-1/2 sm:w-20 px-2 py-2 bg-white border border-slate-200 rounded-xl text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500" value="${cantidad}" min="1" ${isReq} placeholder="Cant">
+                    <input type="number" inputmode="numeric" step="1" class="venta-row-precio w-1/2 sm:w-28 px-2 py-2 bg-white border border-slate-200 rounded-xl text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500" value="${precio !== '' ? Math.round(precio) : (defaultPrecio !== '' ? Math.round(defaultPrecio) : '')}" ${isReq} placeholder="Precio">
                 </div>
                 <button type="button" onclick="document.getElementById('${rowId}').remove()" class="text-rose-500 hover:text-rose-700 py-1 text-center"><i class="fa-solid fa-trash mr-1 sm:mr-0"></i><span class="inline sm:hidden text-xs">Eliminar ítem</span></button>
             `;
