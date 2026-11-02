@@ -521,7 +521,23 @@
 
             if (fotoInput.files && fotoInput.files[0]) {
                 const reader = new FileReader();
-                reader.onload = async (evt) => await handleSave(evt.target.result);
+                reader.onload = (evt) => {
+                    const img = new Image();
+                    img.onload = async () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 400;
+                        const scaleSize = MAX_WIDTH / img.width;
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                        await handleSave(compressedDataUrl);
+                    };
+                    img.src = evt.target.result;
+                };
                 reader.readAsDataURL(fotoInput.files[0]);
             } else {
                 await handleSave(null);
@@ -861,7 +877,7 @@
                     semanasMap[key] = { ventasBrutas: 0, gananciaBruta: 0, gastos: 0, gananciaNeta: 0 };
                 }
                 semanasMap[key].ventasBrutas += v.totalVenta;
-                semanasMap[key].gananciaBruta += v.ganancia;
+                sekanasMap[key].gananciaBruta += v.ganancia;
             });
 
             window.gastos.forEach(g => {
