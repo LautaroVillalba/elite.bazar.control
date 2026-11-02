@@ -484,7 +484,7 @@
         };
 
         window.guardarVentaCloud = async function(vData) {
-            await addDoc(collection(db, "ventas"), vData);
+            return await addDoc(collection(db, "ventas"), vData);
         };
 
         window.eliminarVentaCloud = async function(docId) {
@@ -738,95 +738,102 @@
 
         async function saveVenta(e) {
             e.preventDefault();
-            const fecha = document.getElementById('venta-fecha').value;
-            const cliente = document.getElementById('venta-cliente').value.trim().toUpperCase();
-            const tipo = document.querySelector('input[name="tipo-venta"]:checked').value;
+            try {
+                const fecha = document.getElementById('venta-fecha').value;
+                const cliente = document.getElementById('venta-cliente').value.trim().toUpperCase();
+                const tipo = document.querySelector('input[name="tipo-venta"]:checked').value;
 
-            let items = [];
-            let totalVenta = 0;
-            let totalCosto = 0;
-            let gananciaTotal = 0;
+                let items = [];
+                let totalVenta = 0;
+                let totalCosto = 0;
+                let gananciaTotal = 0;
 
-            if (tipo === 'inventario') {
-                const rows = document.querySelectorAll('.venta-item-row');
-                if (rows.length === 0) {
-                    alert('Debes agregar al menos un producto a la venta.');
-                    return;
-                }
-
-                for (let row of rows) {
-                    const prodId = row.querySelector('.venta-row-prod').value;
-                    const cantidad = parseInt(row.querySelector('.venta-row-cant').value);
-                    const precioVentaUnitario = parseFloat(row.querySelector('.venta-row-precio').value);
-
-                    if (!prodId) {
-                        alert('Por favor selecciona un producto en todas las filas.');
+                if (tipo === 'inventario') {
+                    const rows = document.querySelectorAll('.venta-item-row');
+                    if (rows.length === 0) {
+                        alert('Debes agregar al menos un producto a la venta.');
                         return;
                     }
 
-                    const p = window.productos.find(prod => prod.idDoc === prodId);
-                    if (!p) {
-                        alert('Producto no encontrado.');
-                        return;
+                    for (let row of rows) {
+                        const prodId = row.querySelector('.venta-row-prod').value;
+                        const cantidad = parseInt(row.querySelector('.venta-row-cant').value);
+                        const precioVentaUnitario = parseFloat(row.querySelector('.venta-row-precio').value);
+
+                        if (!prodId) {
+                            alert('Por favor selecciona un producto en todas las filas.');
+                            return;
+                        }
+
+                        const p = window.productos.find(prod => prod.idDoc === prodId);
+                        if (!p) {
+                            alert('Producto no encontrado en el inventario actual.');
+                            return;
+                        }
+
+                        items.push({
+                            productoId: p.idDoc,
+                            productoNombre: p.nombre,
+                            cantidad,
+                            costoUnitario: p.costo || 0,
+                            precioVentaUnitario,
+                            totalVentaItem: cantidad * precioVentaUnitario,
+                            totalCostoItem: cantidad * (p.costo || 0),
+                            gananciaItem: (cantidad * precioVentaUnitario) - (cantidad * (p.costo || 0))
+                        });
+
+                        totalVenta += cantidad * precioVentaUnitario;
+                        totalCosto += cantidad * (p.costo || 0);
+                        gananciaTotal += (cantidad * precioVentaUnitario) - (cantidad * (p.costo || 0));
                     }
 
+                    // Actualizar stock de cada producto vendido
+                    for (let item of items) {
+                        const p = window.productos.find(prod => prod.idDoc === item.productoId);
+                        if (p) {
+                            const nuevoStock = Math.max(0, (p.stock || 0) - item.cantidad);
+                            await window.actualizarStockCloud(p.idDoc, nuevoStock);
+                        }
+                    }
+
+                } else {
+                    // Venta Monto Libre
+                    const concepto = document.getElementById('venta-libre-concepto').value.trim() || 'Venta General';
+                    totalVenta = parseFloat(document.getElementById('venta-libre-monto').value) || 0;
+                    if (totalVenta <= 0) {
+                        alert('Ingresa un monto válido para la venta.');
+                        return;
+                    }
+                    totalCosto = 0;
+                    gananciaTotal = totalVenta;
                     items.push({
-                        productoId: p.idDoc,
-                        productoNombre: p.nombre,
-                        cantidad,
-                        costoUnitario: p.costo,
-                        precioVentaUnitario,
-                        totalVentaItem: cantidad * precioVentaUnitario,
-                        totalCostoItem: cantidad * p.costo,
-                        gananciaItem: (cantidad * precioVentaUnitario) - (cantidad * p.costo)
+                        productoId: 'libre',
+                        productoNombre: concepto,
+                        cantidad: 1,
+                        costoUnitario: 0,
+                        precioVentaUnitario: totalVenta,
+                        totalVentaItem: totalVenta,
+                        totalCostoItem: 0,
+                        gananciaItem: totalVenta
                     });
-
-                    totalVenta += cantidad * precioVentaUnitario;
-                    totalCosto += cantidad * p.costo;
-                    gananciaTotal += (cantidad * precioVentaUnitario) - (cantidad * p.costo);
                 }
 
-                // Actualizar stock en tiempo real
-                for (let item of items) {
-                    const p = window.productos.find(prod => prod.idDoc === item.productoId);
-                    const nuevoStock = Math.max(0, p.stock - item.cantidad);
-                    await window.actualizarStockCloud(p.idDoc, nuevoStock);
-                }
+                const vData = {
+                    fecha,
+                    cliente,
+                    items,
+                    totalVenta,
+                    totalCosto,
+                    ganancia: gananciaTotal
+                };
 
-            } else {
-                // Venta Monto Libre
-                const concepto = document.getElementById('venta-libre-concepto').value.trim() || 'Venta General';
-                totalVenta = parseFloat(document.getElementById('venta-libre-monto').value) || 0;
-                if (totalVenta <= 0) {
-                    alert('Ingresa un monto válido para la venta.');
-                    return;
-                }
-                totalCosto = 0;
-                gananciaTotal = totalVenta;
-                items.push({
-                    productoId: 'libre',
-                    productoNombre: concepto,
-                    cantidad: 1,
-                    costoUnitario: 0,
-                    precioVentaUnitario: totalVenta,
-                    totalVentaItem: totalVenta,
-                    totalCostoItem: 0,
-                    gananciaItem: totalVenta
-                });
+                await window.guardarVentaCloud(vData);
+                closeModal('modal-venta');
+                generarTextoParaCopiar(vData);
+            } catch (error) {
+                console.error("Error detallado al guardar la venta:", error);
+                alert("Hubo un error al registrar la venta. Revisa la consola para más detalles.");
             }
-
-            const vData = {
-                fecha,
-                cliente,
-                items,
-                totalVenta,
-                totalCosto,
-                ganancia: gananciaTotal
-            };
-
-            await window.guardarVentaCloud(vData);
-            closeModal('modal-venta');
-            generarTextoParaCopiar(vData);
         }
 
         function generarTextoParaCopiar(v) {
